@@ -1,0 +1,2 @@
+# GeneradordeRecibos
+Generador de Recibos
