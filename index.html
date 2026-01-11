@@ -3,302 +3,731 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Generador de Recibos - Lemustech (Euros)</title>
+    <title>Lemustech - Hub Administrativo</title>
     
-    <!-- Configuración de Web App -->
-    <link rel="icon" href="https://ui-avatars.com/api/?name=Lemus+Tech&background=1e3a8a&color=fff&rounded=true&size=128" type="image/png">
-    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Lemus+Tech&background=1e3a8a&color=fff&rounded=true&size=512">
+    <!-- Metadatos para Web App (iOS/Android) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lemustech">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="Sistema de facturación y gestión para Lemustech Co.">
 
+    <!-- Iconos Dinámicos -->
+    <link rel="icon" href="https://ui-avatars.com/api/?name=L+T&background=0f172a&color=fff&rounded=true&size=128" type="image/png">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=L+T&background=0f172a&color=fff&rounded=true&size=512">
+
+    <!-- Librerías (CDN Optimizado) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        /* Animación de carga */
+        /* Reset & Base */
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        
+        /* Animaciones Suaves */
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .slide-in { animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* 🖨️ ESTILOS PARA IMPRESIÓN / PDF (MODO PAPEL) */
+        /* Efecto Brillo en Botón */
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .btn-shine { position: relative; overflow: hidden; }
+        .btn-shine::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+        }
+        .btn-shine:hover::after { animation: shine 1.5s infinite; }
+
+        /* Inputs Mejorados */
+        input, select, textarea { font-size: 16px !important; } 
+        
+        /* Toggle Switch Custom */
+        .toggle-checkbox:checked { right: 0; border-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+        
+        /* Scrollbar Invisible */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        /* 🖨️ ESTILOS DE IMPRESIÓN (A4/Carta) */
         @media print {
             @page { margin: 0.5cm; size: auto; }
-            body { background: white; -webkit-print-color-adjust: exact; }
-            .no-print { display: none !important; }
-            .shadow-2xl { box-shadow: none !important; border: 1px solid #eee; }
-            .max-w-2xl { max-width: 100% !important; margin: 0 !important; }
+            body { background: white; -webkit-print-color-adjust: exact; padding: 0; font-size: 10pt; }
+            .no-print, #landing-view, #action-bar, #clients-modal { display: none !important; }
             
-            /* Encabezado */
-            header { background: #1e3a8a !important; color: white !important; -webkit-print-color-adjust: exact; }
+            #app-view { display: block !important; box-shadow: none !important; margin: 0 !important; border: none !important; max-width: 100% !important; }
+            header { background: #0f172a !important; color: white !important; padding: 20px 30px !important; border-radius: 12px !important; margin-bottom: 20px !important; display: flex !important; align-items: center !important; }
+            input, textarea { font-weight: 600; color: #000; border: none; background: transparent; }
+            ::placeholder { color: transparent; }
             
-            /* Inputs como texto limpio */
-            input, textarea, select {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                resize: none;
-                font-family: inherit;
-            }
-            
-            /* Manejo de Datos Bancarios en Impresión */
-            #bankDetailsSection:not(.hidden-print) { display: block !important; border: 1px solid #eee; padding: 10px; margin-top: 10px; }
-            #bankDetailsSection.hidden-print { display: none !important; }
-            
-            /* Asegurar que el contenido del details sea visible */
-            details[open] > div, details:not([open]) > div { display: block !important; }
-            details > summary { display: none !important; }
-
-            /* Ajustes de fuente */
-            .text-xs { font-size: 10px !important; }
-            .text-sm { font-size: 12px !important; }
-            .text-xl { font-size: 18px !important; }
-            
-            /* Ocultar iconos */
-            .item-row button { display: none !important; }
-            .item-row { border: none !important; border-bottom: 1px dashed #eee !important; padding: 5px 0 !important; }
-            
-            /* Contenedor */
-            #items-container { margin-bottom: 20px; }
-            
-            /* Pies de página */
-            .print-footer { display: block !important; text-align: center; font-size: 10px; margin-top: 20px; color: #666; }
+            .items-header { display: flex !important; background: #f1f5f9; padding: 5px 10px; font-weight: bold; border-bottom: 2px solid #cbd5e1; margin-top: 10px; font-size: 9pt; text-transform: uppercase; }
+            .item-row { border-bottom: 1px dashed #cbd5e1; padding: 5px 10px; display: flex; align-items: center; }
+            #bankDetailsSection:not(.hidden-print) { display: block !important; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-top: 20px; page-break-inside: avoid; font-size: 9pt; }
+            .total-box { border: 1px solid #e2e8f0; padding: 10px; page-break-inside: avoid; border-radius: 8px; }
+            .print-footer { display: block !important; position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 8pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; }
         }
-        
-        .print-footer { display: none; }
+        .print-footer, .items-header { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-32 md:pb-12 selection:bg-blue-100 selection:text-blue-900">
 
-    <div class="max-w-2xl mx-auto bg-white min-h-screen shadow-2xl flex flex-col">
+    <!-- ================= LANDING PAGE ================= -->
+    <div id="landing-view" class="max-w-md mx-auto min-h-screen flex flex-col justify-center items-center p-6 fade-in">
+        <div class="text-center mb-10 transform transition-all hover:scale-105 duration-500">
+            <div class="bg-slate-900 text-white w-24 h-24 rounded-[2rem] flex items-center justify-center font-bold text-5xl shadow-2xl shadow-slate-900/30 mx-auto mb-6">
+                <i class="fas fa-cube"></i>
+            </div>
+            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">LemusTech</h1>
+            <p class="text-slate-500 font-medium mt-2 uppercase tracking-widest text-xs">Hub Administrativo</p>
+        </div>
+
+        <div class="grid gap-4 w-full max-w-sm">
+            <button onclick="selectMode('tech')" class="group relative bg-white p-5 rounded-3xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-slate-100 text-left overflow-hidden ring-1 ring-slate-100/50">
+                <div class="absolute right-0 top-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110 group-hover:bg-blue-100/50"></div>
+                <div class="relative z-10 flex items-center gap-5">
+                    <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/30 group-hover:rotate-6 transition-transform">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg text-slate-800 group-hover:text-blue-700 transition-colors">Servicio Técnico</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Facturación en Euros (€)</p>
+                    </div>
+                    <i class="fas fa-arrow-right ml-auto text-slate-300 group-hover:text-blue-500 transition-colors"></i>
+                </div>
+            </button>
+
+            <button onclick="selectMode('streaming')" class="group relative bg-white p-5 rounded-3xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-slate-100 text-left overflow-hidden ring-1 ring-slate-100/50">
+                <div class="absolute right-0 top-0 w-32 h-32 bg-purple-50 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110 group-hover:bg-purple-100/50"></div>
+                <div class="relative z-10 flex items-center gap-5">
+                    <div class="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-purple-500/30 group-hover:rotate-6 transition-transform">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg text-slate-800 group-hover:text-purple-700 transition-colors">Streaming</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Facturación en Bolívares (Bs)</p>
+                    </div>
+                    <i class="fas fa-arrow-right ml-auto text-slate-300 group-hover:text-purple-500 transition-colors"></i>
+                </div>
+            </button>
+        </div>
+
+        <div class="mt-12 flex flex-col items-center gap-2 opacity-60">
+            <div class="h-1 w-12 bg-slate-200 rounded-full"></div>
+            <p class="text-[10px] font-mono text-slate-400">Lemustech Co. System v3.5</p>
+        </div>
+    </div>
+
+    <!-- ================= APP PRINCIPAL ================= -->
+    <div id="app-view" class="hidden max-w-3xl mx-auto main-card bg-white min-h-screen md:min-h-0 md:my-8 md:rounded-[2rem] md:shadow-2xl overflow-hidden flex flex-col relative fade-in border border-slate-100/50">
         
         <!-- Encabezado -->
-        <header class="bg-blue-900 text-white p-6 pt-10">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="bg-white text-blue-900 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">L</div>
-                    <div>
-                        <h1 class="font-bold text-xl">LEMUSTECH CO.</h1>
-                        <p class="text-xs text-blue-200 uppercase tracking-wide">Servicio Técnico Especializado</p>
+        <header class="bg-slate-900 text-white p-6 pt-10 md:p-8 relative overflow-hidden transition-colors duration-500" id="app-header">
+            <div class="absolute top-0 right-0 w-full h-full bg-white/5 opacity-30 pointer-events-none" style="background-image: radial-gradient(circle at 100% 0%, rgba(255,255,255,0.1) 0%, transparent 50%);"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full">
+                <div class="flex items-center gap-4">
+                    <button onclick="goHome()" class="no-print bg-white/10 hover:bg-white/20 p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 backdrop-blur-md border border-white/10">
+                        <i class="fas fa-chevron-left text-white/90"></i>
+                    </button>
+
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-cube text-blue-400 text-xl"></i>
+                            <h1 class="font-bold text-2xl tracking-tight leading-none">LEMUSTECH</h1>
+                        </div>
+                        <p class="text-[10px] text-white/60 uppercase tracking-[0.2em] font-medium mt-1 pl-7" id="header-subtitle">Servicio Técnico</p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-xs text-blue-300">Fecha de Emisión</div>
-                    <input type="date" id="invoiceDate" class="bg-transparent text-white text-right font-bold text-sm rounded border-none p-0 focus:ring-0 cursor-pointer">
+                
+                <div class="w-full md:w-auto flex flex-col items-end gap-3">
+                    <div class="flex items-center justify-between md:justify-end gap-6 bg-white/5 p-3 rounded-2xl border border-white/10 backdrop-blur-md w-full md:w-auto shadow-inner">
+                        <div>
+                            <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Fecha</div>
+                            <input type="date" id="invoiceDate" class="bg-transparent text-white text-sm font-bold border-none p-0 focus:ring-0 cursor-pointer w-full opacity-90">
+                        </div>
+                        <div class="h-8 w-px bg-white/10"></div>
+                        <div class="text-right">
+                            <div class="text-[9px] text-blue-400 uppercase font-bold tracking-wider">Control N°</div>
+                            <input type="text" id="invoiceNumber" value="001" class="bg-transparent text-white text-right text-xl font-mono font-bold border-none p-0 w-16 focus:ring-0" oninput="saveSettings()">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 w-full justify-end no-print">
+                        <button onclick="openClientHistory()" class="text-xs font-semibold text-white/90 hover:text-white flex items-center gap-2 py-2 px-4 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/5 backdrop-blur-sm shadow-sm active:scale-95">
+                            <i class="fas fa-users"></i> Clientes
+                        </button>
+                        <button onclick="resetForm()" class="text-xs font-semibold text-white/90 hover:text-white flex items-center gap-2 py-2 px-4 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/5 backdrop-blur-sm shadow-sm active:scale-95">
+                            <i class="fas fa-eraser"></i> Nueva
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- Configuración Rápida -->
-        <div class="bg-blue-50 p-4 border-b border-blue-100 flex items-center gap-4">
-            <div class="flex-1 relative">
-                <label class="text-xs font-bold text-blue-900 block mb-1 flex justify-between">
-                    <span>Tasa BCV (Bs/€)</span>
-                    <button onclick="fetchBCV(true)" id="btn-refresh" class="text-blue-600 hover:text-blue-800 no-print" title="Actualizar Tasa">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </label>
-                <div class="relative">
-                    <input type="number" id="exchangeRate" placeholder="0.00" class="w-full border border-blue-200 rounded p-2 text-sm focus:border-blue-500 outline-none pr-8 bg-white" oninput="calculateTotal(); saveSettings()">
-                    <span class="absolute right-2 top-2 text-gray-400 text-xs font-bold no-print">Bs</span>
-                </div>
+        <!-- Configuración Tasa -->
+        <div class="bg-slate-50/80 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-end gap-3 no-print sticky top-0 z-40">
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wide">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-green-500/50 shadow-sm"></div>
+                <span id="rate-label">Tasa BCV (Bs/€):</span>
             </div>
-            <div class="flex-1">
-                <label class="text-xs font-bold text-blue-900 block mb-1">N° Control</label>
-                <input type="text" id="invoiceNumber" value="001" class="w-full border border-blue-200 rounded p-2 text-sm focus:border-blue-500 outline-none text-center font-mono font-bold bg-white" oninput="saveSettings()">
-            </div>
-        </div>
-
-        <!-- Datos del Cliente -->
-        <div class="p-6 space-y-4">
-            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Datos del Cliente</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs text-gray-500 block mb-1">Nombre / Razón Social</label>
-                    <input type="text" id="clientName" placeholder="Nombre del Cliente" class="w-full font-semibold border-b border-gray-300 pb-1 focus:border-blue-500 outline-none transition-colors">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 block mb-1">Teléfono / WhatsApp</label>
-                    <div class="flex gap-2">
-                        <select id="countryCode" class="w-24 border-b border-gray-300 pb-1 bg-transparent focus:border-blue-500 outline-none text-sm no-print">
-                            <option value="58" selected>🇻🇪 +58</option>
-                            <option value="1">🇺🇸 +1</option>
-                            <option value="34">🇪🇸 +34</option>
-                            <option value="57">🇨🇴 +57</option>
-                            <option value="55">🇧🇷 +55</option>
-                        </select>
-                        <input type="tel" id="clientPhone" placeholder="412..." class="flex-1 w-full font-semibold border-b border-gray-300 pb-1 focus:border-blue-500 outline-none">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Items de la Factura -->
-        <div class="flex-1 px-6 py-2">
-            <div class="flex justify-between items-center mb-2 border-b pb-1">
-                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Descripción del Servicio</h2>
-                <button onclick="addItem()" class="no-print text-blue-600 text-xs font-bold hover:text-blue-800 transition-colors flex items-center gap-1">
-                    <i class="fas fa-plus-circle"></i> AGREGAR
+            <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <input type="number" id="exchangeRate" placeholder="0.00" class="w-20 text-right text-sm font-bold text-slate-800 border-none p-0 focus:ring-0 outline-none" oninput="handleRateChange(); saveSettings()">
+                <button onclick="fetchBCV(true)" id="btn-refresh" class="text-slate-400 hover:text-blue-600 p-1 transition-colors rounded-lg hover:bg-slate-100" title="Actualizar Tasa">
+                    <i class="fas fa-sync-alt text-xs"></i>
                 </button>
             </div>
-            <div id="items-container" class="space-y-1"></div>
         </div>
 
-        <!-- Totales -->
-        <div class="px-6 py-4">
-            <div class="flex justify-end">
-                <div class="w-full md:w-1/2 space-y-2">
-                    <div class="flex justify-between text-gray-600 border-b border-dashed pb-2">
+        <!-- Contenido -->
+        <div class="p-6 md:p-8 space-y-8 flex-1 overflow-y-auto">
+            
+            <!-- Cliente -->
+            <section>
+                <div class="flex items-center gap-2 mb-4 text-slate-400 pb-2 border-b border-slate-100">
+                    <i class="fas fa-user-circle no-print"></i>
+                    <h2 class="text-xs font-bold uppercase tracking-wider">Información del Cliente</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 gap-y-2-print">
+                    <div class="group">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase mb-1.5 ml-1">Nombre Completo</label>
+                        <input type="text" id="clientName" list="client-suggestions" oninput="handleClientInput()" placeholder="Buscar o escribir nombre..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder-slate-400">
+                        <datalist id="client-suggestions"></datalist>
+                    </div>
+                    
+                    <div class="group">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase mb-1.5 ml-1">Contacto</label>
+                        <div class="flex gap-2">
+                            <select id="countryCode" class="bg-slate-50 border border-slate-200 rounded-xl px-2 text-sm font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none w-28 appearance-none cursor-pointer hover:bg-slate-100 transition-colors">
+                                <option value="58">🇻🇪 +58</option>
+                                <option value="1">🇺🇸 +1</option>
+                                <option value="34">🇪🇸 +34</option>
+                                <option value="57">🇨🇴 +57</option>
+                            </select>
+                            <input type="tel" id="clientPhone" placeholder="412 1234567" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder-slate-400">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="no-print mt-3 flex items-center gap-2 ml-1">
+                    <div class="relative flex items-center">
+                        <input type="checkbox" id="saveClientCheck" class="peer h-4 w-4 cursor-pointer appearance-none rounded border border-slate-300 checked:bg-blue-600 checked:border-transparent focus:ring-2 focus:ring-blue-500/20" checked>
+                        <i class="fas fa-check text-white text-[10px] absolute left-0.5 top-0.5 opacity-0 peer-checked:opacity-100 pointer-events-none"></i>
+                    </div>
+                    <label for="saveClientCheck" class="text-xs text-slate-500 cursor-pointer select-none">Actualizar directorio automáticamente</label>
+                </div>
+            </section>
+
+            <!-- Servicios -->
+            <section>
+                <div class="flex justify-between items-end mb-4 pb-2 border-b border-slate-100 no-print-border">
+                    <div class="flex items-center gap-2 text-slate-400">
+                        <i class="fas fa-receipt no-print"></i>
+                        <h2 class="text-xs font-bold uppercase tracking-wider"><span id="services-title">Detalle de Factura</span></h2>
+                    </div>
+                    <button onclick="addItem()" class="no-print bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold px-4 py-2 rounded-full transition-all flex items-center gap-1.5 shadow-sm border border-blue-100 hover:border-blue-200 active:scale-95">
+                        <i class="fas fa-plus"></i> Agregar
+                    </button>
+                </div>
+
+                <!-- Header Tabla Impresión -->
+                <div class="items-header">
+                    <div class="flex-1 pl-2">Descripción</div>
+                    <div class="w-16 text-center">Cant.</div>
+                    <div class="w-28 text-right pr-2">Total (<span id="table-currency-header">€</span>)</div>
+                </div>
+
+                <div id="items-container" class="space-y-3 print-space-y-0"></div>
+            </section>
+
+            <!-- Totales -->
+            <section class="flex flex-col md:flex-row justify-end items-start gap-8 pt-4 border-t border-slate-100 no-break">
+                <div class="w-full md:w-1/2 order-2 md:order-1">
+                    <label class="text-[10px] text-slate-400 font-bold uppercase mb-2 block section-title no-border ml-1">Observaciones</label>
+                    <textarea id="notes" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 h-28 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none resize-none transition-all placeholder-slate-300"></textarea>
+                </div>
+
+                <div class="w-full md:w-72 space-y-4 order-1 md:order-2 bg-slate-50 p-6 rounded-2xl border border-slate-100 total-box shadow-sm">
+                    <div class="flex justify-between text-slate-500 text-sm font-medium">
                         <span>Subtotal</span>
-                        <span id="subtotalDisplay" class="font-mono">€0.00</span>
+                        <span id="subtotalDisplay" class="font-mono text-slate-700">0.00</span>
                     </div>
-                    <div class="flex justify-between text-xl font-bold text-blue-900 pt-1">
-                        <span>TOTAL</span>
-                        <span id="totalDisplay">€0.00</span>
-                    </div>
-                    <div id="bsContainer" class="flex justify-between text-sm font-bold text-gray-500 hidden pt-1">
-                        <span>En Bolívares (Ref)</span>
-                        <span id="totalBsDisplay">Bs 0.00</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notas y Garantía -->
-        <div class="px-6 pb-4">
-            <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notas / Condiciones</h2>
-            <textarea id="notes" class="w-full border border-gray-200 rounded-lg p-3 text-sm h-20 bg-gray-50 focus:bg-white focus:border-blue-500 outline-none resize-none" placeholder="Ej: Garantía de 15 días. No incluye repuestos."></textarea>
-        </div>
-
-        <!-- OPCIONES DE ENVÍO (Solo visible en pantalla) -->
-        <div class="px-6 py-2 no-print">
-            <div class="bg-blue-50 rounded-lg p-3 border border-blue-100 space-y-3">
-                <div class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">⚙️ Configuración del Recibo</div>
-                
-                <!-- Toggle: Datos Bancarios -->
-                <label class="flex items-center justify-between cursor-pointer">
-                    <span class="text-sm text-gray-700">Mostrar Datos Bancarios</span>
-                    <div class="relative">
-                        <input type="checkbox" id="showBankDetails" class="sr-only" checked onchange="toggleBankVisibility()">
-                        <div class="block bg-gray-300 w-10 h-6 rounded-full toggle-bg"></div>
-                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
-                    </div>
-                </label>
-
-                <!-- Toggle: Tipo de Mensaje -->
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-700">Formato del Mensaje</span>
-                    <div class="flex bg-white rounded-lg border border-gray-200 p-1">
-                        <button onclick="setMsgType('full')" id="btn-msg-full" class="text-xs px-3 py-1 rounded bg-blue-600 text-white font-bold transition-colors">Texto Detallado</button>
-                        <button onclick="setMsgType('pdf')" id="btn-msg-pdf" class="text-xs px-3 py-1 rounded text-gray-500 font-medium hover:bg-gray-100 transition-colors">Solo PDF</button>
-                    </div>
-                </div>
-                <div id="pdf-hint" class="text-[10px] text-gray-500 hidden italic">
-                    ℹ️ Se generará un mensaje corto para que adjuntes el archivo PDF manualmente.
-                </div>
-            </div>
-        </div>
-
-        <!-- Métodos de Pago (Se muestra/oculta según switch) -->
-        <div class="px-6 py-4 mb-4 no-break" id="bankDetailsWrapper">
-            <details id="bankDetailsSection" class="bg-gray-50 rounded-lg border border-gray-200 group" open>
-                <summary class="p-3 font-bold text-sm text-gray-600 cursor-pointer flex justify-between items-center bg-gray-100 rounded-t-lg select-none no-print">
-                    <span>💳 Datos Bancarios y Pagos</span>
-                    <i class="fas fa-chevron-down transform group-open:rotate-180 transition-transform"></i>
-                </summary>
-                
-                <div class="p-4 space-y-4 border-t border-gray-200 bg-white rounded-b-lg text-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-xs font-bold text-blue-600 block mb-1">Pago Móvil</label>
-                            <input type="text" id="payMobile" class="w-full border-b border-gray-200 pb-1 text-gray-700" oninput="saveSettings()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-purple-600 block mb-1">Wally / Zinli</label>
-                            <input type="text" id="payWallets" class="w-full border-b border-gray-200 pb-1 text-gray-700" placeholder="ID Wally / Zinli" oninput="saveSettings()">
+                    
+                    <!-- Descuento -->
+                    <div class="flex justify-between items-center text-slate-500 text-sm font-medium group">
+                        <span>Descuento</span>
+                        <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-0.5 focus-within:border-red-300 transition-colors">
+                            <input type="number" id="discountInput" placeholder="0" class="w-10 text-right font-mono text-red-500 bg-transparent border-none outline-none text-sm p-0" oninput="calculateTotal()">
+                            <span class="text-xs font-bold text-slate-400">%</span>
                         </div>
                     </div>
-                    <div>
-                        <label class="text-xs font-bold text-green-600 block mb-1">Transferencias (Bs)</label>
-                        <textarea id="payBank" rows="3" class="w-full border border-gray-200 rounded p-2 text-xs font-mono" oninput="saveSettings()"></textarea>
+
+                    <div class="flex justify-between items-center border-t border-slate-200 pt-3 mt-2">
+                        <span class="text-sm font-bold text-slate-800 tracking-wide">TOTAL</span>
+                        <span id="totalDisplay" class="text-2xl font-extrabold text-slate-900 tracking-tight">0.00</span>
                     </div>
-                    <div>
-                        <label class="text-xs font-bold text-yellow-600 block mb-1">Binance Pay</label>
-                        <input type="text" id="payBinance" class="w-full border-b border-gray-200 pb-1 text-xs" oninput="saveSettings()">
+                    
+                    <div id="bsContainer" class="hidden bg-white text-slate-600 rounded-lg px-3 py-2 text-xs font-bold text-center border border-slate-200 shadow-sm mt-2">
+                        <span class="text-[10px] text-slate-400 block font-normal uppercase mb-0.5">Referencia</span>
+                        <span id="totalBsDisplay" class="text-sm text-blue-600">Bs 0.00</span>
                     </div>
                 </div>
-            </details>
+            </section>
+
+            <!-- Pagos -->
+            <section id="bankDetailsWrapper" class="no-break mt-6">
+                <div class="flex items-center justify-between mb-3 no-print">
+                    <div class="flex items-center gap-2 text-slate-400">
+                        <i class="fas fa-wallet no-print"></i>
+                        <h2 class="text-xs font-bold uppercase tracking-wider">Métodos de Pago</h2>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Mostrar</span>
+                        <div class="relative inline-block w-8 mr-1 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="showBankDetails" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 top-0.5" checked onchange="toggleBankVisibility()"/>
+                            <label for="showBankDetails" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-200 cursor-pointer transition-colors"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bankDetailsSection" class="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-xs text-slate-600 hidden-print-controller shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-10">
+                        <div>
+                            <strong class="block text-blue-700 mb-1.5 uppercase text-[10px] tracking-wider font-bold">Pago Móvil</strong>
+                            <input type="text" id="payMobile" class="w-full bg-transparent border-b border-slate-200 focus:border-blue-500 outline-none pb-1 font-medium transition-colors" oninput="saveSettings()">
+                        </div>
+                        <div>
+                            <strong class="block text-purple-700 mb-1.5 uppercase text-[10px] tracking-wider font-bold">Wally / Zinli</strong>
+                            <input type="text" id="payWallets" class="w-full bg-transparent border-b border-slate-200 focus:border-purple-500 outline-none pb-1 font-medium transition-colors" oninput="saveSettings()">
+                        </div>
+                        <div class="md:col-span-2">
+                            <strong class="block text-green-700 mb-1.5 uppercase text-[10px] tracking-wider font-bold">Transferencias Bancarias (Bs)</strong>
+                            <textarea id="payBank" rows="2" class="w-full bg-transparent border border-slate-200 rounded-lg p-2 pl-0 font-mono text-[11px] leading-relaxed focus:border-green-500 outline-none transition-colors -ml-1 resize-y" oninput="saveSettings()"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <strong class="block text-yellow-600 mb-1.5 uppercase text-[10px] tracking-wider font-bold">Binance Pay</strong>
+                            <input type="text" id="payBinance" class="w-full bg-transparent border-b border-slate-200 focus:border-yellow-500 outline-none pb-1 font-mono font-medium transition-colors" oninput="saveSettings()">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Config Envío -->
+            <div class="bg-gradient-to-r from-slate-50 to-white rounded-2xl p-2 border border-slate-200 flex items-center justify-between no-print shadow-sm mt-6">
+                <span class="text-[10px] font-bold text-slate-400 uppercase ml-4">Formato de Envío:</span>
+                <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+                    <button onclick="setMsgType('full')" id="btn-msg-full" class="text-xs px-4 py-2 rounded-lg font-bold transition-all shadow-sm bg-white text-slate-800 shadow-slate-200 ring-1 ring-black/5">Completo</button>
+                    <button onclick="setMsgType('pdf')" id="btn-msg-pdf" class="text-xs px-4 py-2 rounded-lg font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 transition-all">Solo PDF</button>
+                </div>
+            </div>
+            <p id="pdf-hint" class="text-[10px] text-slate-400 text-center -mt-4 hidden no-print flex items-center justify-center gap-1 pb-4">
+                <i class="fas fa-info-circle"></i> Mensaje corto para adjuntar archivo.
+            </p>
+
         </div>
-        
-        <!-- Pie de página para impresión -->
+
         <div class="print-footer">
-            <p><strong>LEMUSTECH CO.</strong> | RIF: J-XXXXXXXX-X</p>
-            <p>www.lemustech.net | @Lemustech.ve | +58 424-1353496</p>
-            <p>Caracas, Venezuela</p>
+            <p class="font-bold text-slate-900 text-sm">LEMUSTECH CO.</p>
+            <p>J-XXXXXXXX-X | Caracas, Venezuela</p>
+            <p class="text-[10px] mt-1 text-slate-500">www.lemustech.net | @Lemustech.ve | +58 424-1353496</p>
         </div>
-
-        <!-- Botones de Acción -->
-        <div class="p-6 bg-gray-100 flex gap-3 no-print pb-10 mt-auto border-t">
-            <button onclick="generateWhatsAppLink()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
-                <i class="fab fa-whatsapp text-2xl"></i> Enviar WhatsApp
-            </button>
-            <button onclick="triggerPrint()" class="px-6 bg-blue-800 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg flex flex-col items-center justify-center" title="Descargar como PDF">
-                <i class="fas fa-file-pdf text-xl mb-1"></i>
-                <span class="text-[10px]">PDF</span>
-            </button>
-        </div>
-
     </div>
 
-    <!-- Template para Items (Oculto) -->
+    <!-- Barra de Acciones Flotante -->
+    <div id="action-bar" class="hidden fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-slate-200/60 p-3 md:p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] md:static md:bg-transparent md:border-0 md:shadow-none md:p-0 no-print z-50 transition-all duration-300 safe-area-pb">
+        <div class="max-w-3xl mx-auto flex gap-3">
+            <button onclick="generateWhatsAppLink()" class="btn-shine flex-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-green-500/25 flex items-center justify-center gap-2.5 transition-all hover:-translate-y-0.5 active:scale-95 group border border-green-400/20">
+                <i class="fab fa-whatsapp text-2xl group-hover:rotate-12 transition-transform"></i> 
+                <span>Enviar Recibo</span>
+            </button>
+            <button onclick="copyToClipboard()" class="w-14 bg-white hover:bg-slate-50 text-slate-600 font-bold rounded-2xl shadow-sm flex flex-col items-center justify-center transition-all border border-slate-200 hover:border-slate-300 active:scale-95 hover:text-blue-600 group" title="Copiar">
+                <i class="fas fa-copy text-lg group-hover:scale-110 transition-transform"></i>
+            </button>
+            <button onclick="triggerPrint()" class="w-14 bg-white hover:bg-slate-50 text-slate-600 font-bold rounded-2xl shadow-sm flex flex-col items-center justify-center transition-all border border-slate-200 hover:border-slate-300 active:scale-95 hover:text-red-500 group" title="PDF">
+                <i class="fas fa-file-pdf text-lg group-hover:scale-110 transition-transform"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CLIENTES -->
+    <div id="clients-modal" class="fixed inset-0 z-50 hidden transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeClientHistory()"></div>
+        <div class="absolute right-0 top-0 h-full w-full md:w-96 bg-white shadow-2xl p-6 flex flex-col transform transition-transform duration-300 translate-x-full" id="clients-panel">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-slate-800">Directorio</h2>
+                <button onclick="closeClientHistory()" class="bg-slate-100 hover:bg-slate-200 text-slate-500 p-2 rounded-full transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="relative mb-4">
+                <i class="fas fa-search absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                <input type="text" id="searchClient" placeholder="Buscar cliente..." class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium" oninput="renderClientList()">
+            </div>
+            
+            <div id="clients-list" class="flex-1 overflow-y-auto space-y-2 pr-1 -mr-2">
+                <!-- Lista -->
+            </div>
+            
+            <div class="pt-4 border-t border-slate-100 mt-4 text-center">
+                <p class="text-[10px] text-slate-400 font-medium">Total: <span id="client-count">0</span> clientes guardados</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Item -->
     <template id="item-template">
-        <div class="py-2 border-b border-gray-100 item-row animate-fade-in relative group hover:bg-gray-50 transition-colors">
-            <button onclick="removeItem(this)" class="no-print absolute top-2 right-0 text-red-400 hover:text-red-600 p-1"><i class="fas fa-times-circle"></i></button>
-            <div class="mb-1 no-print">
-                <select onchange="fillItem(this)" class="service-select w-full text-xs text-blue-600 font-bold border-none bg-transparent cursor-pointer hover:underline focus:ring-0 p-0">
-                    <option value="">▼ Elegir servicio...</option>
-                </select>
+        <div class="item-row group bg-white border border-slate-100 rounded-xl p-2 pl-3 hover:border-blue-400 hover:shadow-md transition-all duration-300 flex gap-3 items-center mb-2 slide-in">
+            <div class="no-print relative flex-shrink-0">
+                <select onchange="fillItem(this)" class="service-select w-8 h-8 text-transparent bg-transparent border-none cursor-pointer focus:ring-0 p-0 absolute opacity-0 z-10 inset-0"><option value="">...</option></select>
+                <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors pointer-events-none border border-blue-100"><i class="fas fa-list text-xs"></i></div>
             </div>
-            <div class="flex gap-4 items-center">
-                <div class="flex-1"><input type="text" placeholder="Descripción" class="item-desc w-full font-semibold text-gray-800 border-none p-0 focus:ring-0 bg-transparent placeholder-gray-300"></div>
-                <div class="w-12 text-center"><input type="number" placeholder="1" value="1" min="1" class="item-qty w-full text-center border bg-gray-50 rounded p-1 text-sm focus:border-blue-500 outline-none" oninput="calculateTotal()"></div>
-                <div class="w-20 text-right relative"><span class="absolute left-0 top-1 text-gray-400 text-xs">€</span><input type="number" placeholder="0.00" class="item-price w-full text-right font-mono text-sm border-none p-1 focus:ring-0 bg-transparent" oninput="calculateTotal()"></div>
-            </div>
+            <div class="flex-1"><input type="text" placeholder="Descripción" class="item-desc w-full text-sm font-semibold text-slate-700 border-none p-0 focus:ring-0 bg-transparent placeholder-slate-300"></div>
+            <div class="w-14"><input type="number" placeholder="1" value="1" min="1" class="item-qty w-full text-center bg-slate-50 rounded-lg p-1.5 text-sm font-bold text-slate-600 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" oninput="calculateTotal()"></div>
+            <div class="w-24 relative"><span class="currency-label absolute left-2 top-1.5 text-slate-400 text-xs font-bold no-print">€</span><input type="number" placeholder="0.00" class="item-price w-full text-right font-mono text-sm font-bold text-slate-800 bg-transparent border-none p-1.5 focus:ring-0" oninput="handleManualPriceEdit(this); calculateTotal()"></div>
+            <button onclick="removeItem(this)" class="no-print text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg p-2 transition-all flex-shrink-0"><i class="fas fa-trash-alt text-xs"></i></button>
         </div>
     </template>
 
-    <style>
-        input:checked ~ .toggle-bg { background-color: #10b981; }
-        input:checked ~ .dot { transform: translateX(100%); }
-        .no-break { break-inside: avoid; }
-    </style>
-
     <script>
-        // --- CONFIG ---
-        const predefinedServices = [ { name: "Formateo & Instalación S.O.", price: 60 }, { name: "Mantenimiento Hardware", price: 40 }, { name: "Upgrade macOS (Patching)", price: 80 }, { name: "Instalación SSD", price: 85 }, { name: "Soporte Remoto (Hora)", price: 40 }, { name: "Licencia Office", price: 25 }, { name: "Diagnóstico", price: 10 }, { name: "Instalación Soft. Básico", price: 15 } ];
+        // --- DATA ---
+        const servicesTech = [ 
+            { name: "Formateo & Instalación S.O.", price: 60 }, { name: "Mantenimiento Hardware", price: 40 }, 
+            { name: "Upgrade macOS (Patching)", price: 80 }, { name: "Instalación SSD", price: 85 }, 
+            { name: "Soporte Remoto (Hora)", price: 40 }, { name: "Licencia Office", price: 25 }, 
+            { name: "Diagnóstico", price: 10 }, { name: "Instalación Soft. Básico", price: 15 } 
+        ];
+        
+        const servicesStreaming = [
+            { name: "Netflix", price: 7 }, { name: "Disney+ Premium", price: 7 }, { name: "Amazon Prime Video", price: 7 }, 
+            { name: "Max (HBO)", price: 7 }, { name: "Paramount+", price: 7 }, { name: "Spotify Premium", price: 7 },
+            { name: "Crunchyroll Mega Fan", price: 7.5 }, { name: "Apple TV+", price: 7.5 }, { name: "Plex (Películas/Series)", price: 7.5 },
+            { name: "CapCut Pro", price: 9 }, { name: "Canva Pro", price: 9 }, { name: "AtresPlayer", price: 9 }, { name: "Vix Premium", price: 9 },
+            { name: "ChatGPT Plus", price: 13 }, { name: "YouTube Premium - Próximamente", price: 0 }
+        ];
+
+        let currentMode = 'tech', currentServices = servicesTech, clients = [];
         const defaultBankData = `BANESCO: 0134-0224-87-2241030305\nBANPLUS: 0174-0126-21-1264042910\nVENEZUELA: 0102-0339-25-0000496465\nTitular: Luis Lemus | CI: 20.297.129`;
         const defaultMobileData = "Banesco/Banplus - 0424-1353496 - CI: 20.297.129";
         const defaultWallets = "Wally: llemus1292@Gmail.com | Zinli: llemus1292@outlook.com";
         const defaultBinance = "Pay ID: 519506837 (Llemus43)";
-        let currentMsgType = 'full'; // 'full' or 'pdf'
+        let currentMsgType = 'full';
 
-        // --- UI LOGIC ---
+        // --- NAVIGATION ---
+        function selectMode(mode) {
+            currentMode = mode;
+            const header = document.getElementById('app-header'), subtitle = document.getElementById('header-subtitle'), serviceTitle = document.getElementById('services-title'), rateLabel = document.getElementById('rate-label'), tableCurr = document.getElementById('table-currency-header');
+            
+            if (mode === 'tech') {
+                currentServices = servicesTech;
+                header.className = 'bg-slate-900 text-white p-8 pt-12 md:rounded-t-3xl relative overflow-hidden transition-colors duration-700 ease-in-out';
+                subtitle.textContent = "Servicio Técnico Especializado"; serviceTitle.textContent = "Servicios Realizados"; rateLabel.textContent = "Tasa BCV (Bs/€):"; tableCurr.textContent = "€";
+            } else {
+                currentServices = servicesStreaming;
+                header.className = 'bg-indigo-900 text-white p-8 pt-12 md:rounded-t-3xl relative overflow-hidden transition-colors duration-700 ease-in-out';
+                subtitle.textContent = "Servicios de Streaming"; serviceTitle.textContent = "Suscripciones / Cuentas"; rateLabel.textContent = "Tasa Cálculo (Bs):"; tableCurr.textContent = "Bs";
+            }
+            
+            document.getElementById('landing-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('action-bar').classList.remove('hidden');
+            if(window.innerWidth >= 768) document.getElementById('action-bar').classList.add('md:flex');
+            
+            document.getElementById('items-container').innerHTML = '';
+            document.getElementById('discountInput').value = "";
+            addItem(); calculateTotal();
+        }
+
+        function goHome() {
+            if(confirm("¿Volver al inicio?")) {
+                document.getElementById('app-view').classList.add('hidden');
+                document.getElementById('action-bar').classList.add('hidden');
+                document.getElementById('landing-view').classList.remove('hidden');
+                resetForm(false);
+            }
+        }
+
+        // --- CLIENTS MODULE ---
+        function loadClients() {
+            const stored = localStorage.getItem('lemustech_clients');
+            clients = stored ? JSON.parse(stored) : [];
+            updateDatalist();
+        }
+
+        function saveClient(name, phone, code) {
+            if (!name) return;
+            const cleanName = name.trim();
+            const existingIndex = clients.findIndex(c => c.name.toLowerCase() === cleanName.toLowerCase());
+            
+            if (existingIndex >= 0) {
+                clients[existingIndex] = { name: cleanName, phone, code, lastSeen: new Date().toISOString() };
+            } else {
+                clients.push({ name: cleanName, phone, code, lastSeen: new Date().toISOString() });
+            }
+            clients.sort((a,b) => a.name.localeCompare(b.name));
+            localStorage.setItem('lemustech_clients', JSON.stringify(clients));
+            updateDatalist();
+        }
+
+        function updateDatalist() {
+            const dl = document.getElementById('client-suggestions');
+            dl.innerHTML = '';
+            clients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                dl.appendChild(opt);
+            });
+            document.getElementById('client-count').innerText = clients.length;
+        }
+
+        function handleClientInput() {
+            const val = document.getElementById('clientName').value;
+            const client = clients.find(c => c.name.toLowerCase() === val.toLowerCase());
+            if (client) {
+                document.getElementById('clientPhone').value = client.phone;
+                document.getElementById('countryCode').value = client.code || "58";
+            }
+        }
+
+        function openClientHistory() {
+            document.getElementById('clients-modal').classList.remove('hidden', 'pointer-events-none');
+            setTimeout(() => { document.getElementById('clients-modal').classList.remove('opacity-0'); document.getElementById('clients-panel').classList.remove('translate-x-full'); }, 10);
+            renderClientList();
+        }
+
+        function closeClientHistory() {
+            document.getElementById('clients-panel').classList.add('translate-x-full');
+            document.getElementById('clients-modal').classList.add('opacity-0');
+            setTimeout(() => { document.getElementById('clients-modal').classList.add('hidden', 'pointer-events-none'); }, 300);
+        }
+
+        function renderClientList() {
+            const term = document.getElementById('searchClient').value.toLowerCase();
+            const list = document.getElementById('clients-list');
+            list.innerHTML = '';
+            const filtered = clients.filter(c => c.name.toLowerCase().includes(term));
+            
+            if(filtered.length === 0) {
+                list.innerHTML = '<div class="text-center text-slate-400 py-10 text-xs">Sin resultados.</div>';
+                return;
+            }
+
+            filtered.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-100 transition-colors group cursor-pointer';
+                div.onclick = (e) => { if(!e.target.closest('button')) { document.getElementById('clientName').value = c.name; handleClientInput(); closeClientHistory(); } };
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold">${c.name.charAt(0)}</div>
+                        <div><div class="font-bold text-slate-700 text-sm">${c.name}</div><div class="text-[10px] text-slate-400">+${c.code||58} ${c.phone}</div></div>
+                    </div>
+                    <button onclick="deleteClient('${c.name}')" class="text-slate-300 hover:text-red-500 p-2 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function deleteClient(name) {
+            if(!confirm(`¿Eliminar?`)) return;
+            clients = clients.filter(c => c.name !== name);
+            localStorage.setItem('lemustech_clients', JSON.stringify(clients));
+            updateDatalist(); renderClientList();
+        }
+
+        // --- CALCULATION CORE ---
+        function handleRateChange() {
+            const rate = parseFloat(document.getElementById('exchangeRate').value) || 0;
+            if (currentMode === 'streaming' && rate > 0) {
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const basePrice = row.getAttribute('data-base-price');
+                    if (basePrice) {
+                        const newBsPrice = (parseFloat(basePrice) * rate).toFixed(2);
+                        row.querySelector('.item-price').value = newBsPrice;
+                    }
+                });
+            }
+            calculateTotal();
+        }
+
+        function handleManualPriceEdit(el) {
+            if (currentMode === 'streaming') {
+                const row = el.closest('.item-row');
+                row.removeAttribute('data-base-price');
+            }
+        }
+
+        function addItem() {
+            const t = document.getElementById('item-template').content.cloneNode(true);
+            const sel = t.querySelector('.service-select');
+            currentServices.forEach((s,i) => {
+                const o = document.createElement('option'); o.value = i; 
+                o.textContent = currentMode === 'tech' ? `${s.name} (€${s.price})` : s.name; 
+                sel.appendChild(o);
+            });
+            const symbol = currentMode === 'tech' ? '€' : 'Bs';
+            t.querySelector('.currency-label').textContent = symbol;
+            document.getElementById('items-container').appendChild(t);
+        }
+
+        function fillItem(el) {
+            const row = el.closest('.item-row');
+            if (el.value !== "") {
+                const s = currentServices[el.value];
+                row.querySelector('.item-desc').value = s.name;
+                if (currentMode === 'tech') {
+                    row.querySelector('.item-price').value = s.price;
+                    row.removeAttribute('data-base-price');
+                } else {
+                    const rate = parseFloat(document.getElementById('exchangeRate').value) || 0;
+                    if (s.price === 0) row.querySelector('.item-price').value = 0;
+                    else if (rate > 0) {
+                        row.querySelector('.item-price').value = (s.price * rate).toFixed(2);
+                        row.setAttribute('data-base-price', s.price);
+                    } else {
+                        row.querySelector('.item-price').value = 0;
+                        row.setAttribute('data-base-price', s.price);
+                        alert("⚠️ Por favor ingresa la Tasa del día.");
+                        document.getElementById('exchangeRate').focus();
+                    }
+                }
+            }
+            calculateTotal();
+        }
+
+        function removeItem(btn) {
+            const c = document.getElementById('items-container');
+            btn.closest('.item-row').remove();
+            if(c.children.length === 0) addItem();
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                subtotal += (row.querySelector('.item-qty').value || 0) * (row.querySelector('.item-price').value || 0);
+            });
+
+            const discountPercent = parseFloat(document.getElementById('discountInput').value) || 0;
+            const discountAmount = subtotal * (discountPercent / 100);
+            let total = subtotal - discountAmount;
+            if (total < 0) total = 0;
+
+            const rate = document.getElementById('exchangeRate').value;
+            const subtotalDisp = document.getElementById('subtotalDisplay');
+            const totalDisp = document.getElementById('totalDisplay');
+            const bsContainer = document.getElementById('bsContainer');
+            
+            if (currentMode === 'tech') {
+                subtotalDisp.textContent = `€${subtotal.toFixed(2)}`;
+                totalDisp.textContent = `€${total.toFixed(2)}`;
+                if (rate > 0) {
+                    const totalBs = total * rate;
+                    document.getElementById('totalBsDisplay').textContent = `Bs ${totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    bsContainer.classList.remove('hidden');
+                } else { bsContainer.classList.add('hidden'); }
+            } else {
+                subtotalDisp.textContent = `Bs ${subtotal.toLocaleString('es-VE', {minimumFractionDigits: 2})}`;
+                totalDisp.textContent = `Bs ${total.toLocaleString('es-VE', {minimumFractionDigits: 2})}`;
+                bsContainer.classList.add('hidden');
+            }
+            return { total, rate, subtotal, discountAmount, discountPercent };
+        }
+
+        // --- WHATSAPP ---
+        function buildMessageData() {
+            const clientName = document.getElementById('clientName').value || "Cliente";
+            const invoiceNum = document.getElementById('invoiceNumber').value;
+            const showBank = document.getElementById('showBankDetails').checked;
+            const notes = document.getElementById('notes').value;
+            const rawDate = document.getElementById('invoiceDate').value;
+            const [y, m, d] = rawDate.split('-');
+            const date = `${d}/${m}/${y}`;
+            const { total, rate, subtotal, discountAmount, discountPercent } = calculateTotal();
+
+            let headerTitle = currentMode === 'tech' ? "Servicio Técnico Especializado" : "Servicios de Streaming";
+            let servicesHeader = currentMode === 'tech' ? "🔧 *SERVICIOS:*" : "🎬 *SUSCRIPCIONES:*";
+
+            let msg = "";
+            if (currentMsgType === 'full') {
+                msg = `*LEMUSTECH CO.* 💻\n_${headerTitle}_\n\n`;
+                msg += `📄 *Recibo N°:* ${invoiceNum}\n🗓️ *Fecha:* ${date}\n👤 *Cliente:* ${clientName}\n\n`;
+                msg += `${servicesHeader}\n━━━━━━━━━━━━━━━━━━━\n`;
+                
+                let hasItems = false;
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const desc = row.querySelector('.item-desc').value;
+                    const qty = row.querySelector('.item-qty').value;
+                    const price = row.querySelector('.item-price').value;
+                    if(desc && price) {
+                        hasItems = true;
+                        if (currentMode === 'tech') msg += `🔸 ${desc} (x${qty}) → €${(price * qty).toFixed(2)}\n`;
+                        else {
+                            const totalRow = (price * qty).toLocaleString('es-VE', {minimumFractionDigits: 2});
+                            msg += `🔸 ${desc} (x${qty}) → Bs ${totalRow}\n`;
+                        }
+                    }
+                });
+                if (!hasItems) return null;
+
+                msg += `━━━━━━━━━━━━━━━━━━━\n`;
+                
+                if (discountPercent > 0) {
+                    if (currentMode === 'tech') {
+                        msg += `🏷️ *Subtotal:* €${subtotal.toFixed(2)}\n📉 *Descuento (${discountPercent}%):* -€${discountAmount.toFixed(2)}\n━━━━━━━━━━━━━━━━━━━\n`;
+                    } else {
+                        msg += `🏷️ *Subtotal:* Bs ${subtotal.toLocaleString('es-VE', {minimumFractionDigits: 2})}\n📉 *Descuento (${discountPercent}%):* -Bs ${discountAmount.toLocaleString('es-VE', {minimumFractionDigits: 2})}\n━━━━━━━━━━━━━━━━━━━\n`;
+                    }
+                }
+
+                if (currentMode === 'tech') {
+                    msg += `💶 *TOTAL: €${total.toFixed(2)}*\n`;
+                    if (rate > 0) {
+                        const totalBs = total * rate;
+                        msg += `🇻🇪 *En Bs:* ${totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (Tasa: ${rate})\n`;
+                    }
+                } else msg += `💰 *TOTAL A PAGAR: Bs ${total.toLocaleString('es-VE', {minimumFractionDigits: 2})}*\n`;
+
+                if (showBank) {
+                    msg += `\n💳 *DATOS DE PAGO:*\n`;
+                    const pm = document.getElementById('payMobile').value;
+                    const pw = document.getElementById('payWallets').value;
+                    const pb = document.getElementById('payBinance').value;
+                    if(pm) msg += `📲 Pago Móvil: ${pm}\n`;
+                    if(pw) msg += `🔹 Wallets: ${pw}\n`;
+                    if(pb) msg += `🔸 Binance: ${pb}\n`;
+                    if(document.getElementById('payBank').value) msg += `🏦 Transferencias: Ver adjunto\n`;
+                }
+                if (notes) msg += `\n📝 *Nota:* ${notes}\n`;
+                msg += `\n✅ Gracias por su preferencia.\n\n🌐 www.lemustech.net\n📸 @Lemustech.ve`;
+            } else {
+                msg = `*LEMUSTECH CO.* 💻\n_${headerTitle}_\n\n`;
+                msg += `👋 Hola *${clientName}*.\n`;
+                msg += `📎 Adjunto envío su *Recibo N° ${invoiceNum}* en formato PDF.\n\n`;
+                if (currentMode === 'tech') {
+                    msg += `💶 *Total a Pagar: €${total.toFixed(2)}*\n`;
+                    if (rate > 0) {
+                        const totalBs = total * rate;
+                        msg += `🇻🇪 (Bs ${totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2})})\n`;
+                    }
+                } else msg += `💰 *Total a Pagar: Bs ${total.toLocaleString('es-VE', {minimumFractionDigits: 2})}*\n`;
+                msg += `\n✅ Quedo atento a su pago y comentarios.\n`;
+            }
+            return msg;
+        }
+
+        // --- UTILS ---
         function toggleBankVisibility() {
             const isChecked = document.getElementById('showBankDetails').checked;
-            const wrapper = document.getElementById('bankDetailsWrapper');
             const section = document.getElementById('bankDetailsSection');
-            
-            if (isChecked) {
-                wrapper.classList.remove('hidden');
-                section.classList.remove('hidden-print');
-            } else {
-                wrapper.classList.add('hidden');
-                section.classList.add('hidden-print');
-            }
+            if (isChecked) { section.classList.remove('hidden-print-controller'); section.classList.remove('hidden'); }
+            else { section.classList.add('hidden-print-controller'); section.classList.add('hidden'); }
         }
 
         function setMsgType(type) {
@@ -306,34 +735,36 @@
             const btnFull = document.getElementById('btn-msg-full');
             const btnPdf = document.getElementById('btn-msg-pdf');
             const hint = document.getElementById('pdf-hint');
-
+            const activeStyle = "bg-white text-slate-800 shadow-md transform scale-105 font-bold";
+            const inactiveStyle = "text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-medium";
             if (type === 'full') {
-                btnFull.className = "text-xs px-3 py-1 rounded bg-blue-600 text-white font-bold transition-colors";
-                btnPdf.className = "text-xs px-3 py-1 rounded text-gray-500 font-medium hover:bg-gray-100 transition-colors";
+                btnFull.className = `text-xs px-5 py-2 rounded-lg transition-all ${activeStyle}`;
+                btnPdf.className = `text-xs px-5 py-2 rounded-lg transition-all ${inactiveStyle}`;
                 hint.classList.add('hidden');
             } else {
-                btnPdf.className = "text-xs px-3 py-1 rounded bg-blue-600 text-white font-bold transition-colors";
-                btnFull.className = "text-xs px-3 py-1 rounded text-gray-500 font-medium hover:bg-gray-100 transition-colors";
+                btnPdf.className = `text-xs px-5 py-2 rounded-lg transition-all ${activeStyle}`;
+                btnFull.className = `text-xs px-5 py-2 rounded-lg transition-all ${inactiveStyle}`;
                 hint.classList.remove('hidden');
             }
         }
 
         function triggerPrint() {
-            // Asegurar que la visibilidad es correcta antes de imprimir
             const isChecked = document.getElementById('showBankDetails').checked;
             const section = document.getElementById('bankDetailsSection');
-            
-            if(isChecked) {
-                section.classList.remove('hidden-print'); 
-                section.setAttribute('open', ''); // Forzar open para imprimir
-            } else {
-                section.classList.add('hidden-print');
-            }
-            
+            if(isChecked) section.classList.remove('hidden-print'); else section.classList.add('hidden-print');
             setTimeout(() => window.print(), 100);
         }
 
-        // --- STORAGE & API ---
+        function resetForm(ask = true) {
+            if(ask && !confirm("¿Limpiar formulario?")) return;
+            document.getElementById('clientName').value = "";
+            document.getElementById('clientPhone').value = "";
+            document.getElementById('notes').value = "";
+            document.getElementById('discountInput').value = "";
+            document.getElementById('items-container').innerHTML = '';
+            addItem(); calculateTotal();
+        }
+
         function saveSettings() {
             const settings = {
                 rate: document.getElementById('exchangeRate').value,
@@ -344,11 +775,11 @@
                 payBinance: document.getElementById('payBinance').value,
                 showBank: document.getElementById('showBankDetails').checked
             };
-            localStorage.setItem('lemustech_settings_v4', JSON.stringify(settings));
+            localStorage.setItem('lemustech_settings_v8', JSON.stringify(settings));
         }
 
         function loadSettings() {
-            const saved = localStorage.getItem('lemustech_settings_v4');
+            const saved = localStorage.getItem('lemustech_settings_v8');
             if (!saved) {
                 document.getElementById('payBank').value = defaultBankData;
                 document.getElementById('payMobile').value = defaultMobileData;
@@ -369,158 +800,54 @@
             }
         }
 
+        function copyToClipboard() {
+            const msg = buildMessageData();
+            if (!msg) return alert("Agrega servicios primero.");
+            navigator.clipboard.writeText(msg).then(() => alert("Copiado al portapapeles."));
+        }
+
+        function generateWhatsAppLink() {
+            const msg = buildMessageData();
+            if (!msg) return alert("Agrega servicios primero.");
+            
+            if(document.getElementById('saveClientCheck').checked) {
+                saveClient(document.getElementById('clientName').value, document.getElementById('clientPhone').value, document.getElementById('countryCode').value);
+            }
+
+            const clientPhone = document.getElementById('clientPhone').value; 
+            const countryCode = document.getElementById('countryCode').value;
+            const invoiceInput = document.getElementById('invoiceNumber');
+            try { invoiceInput.value = (parseInt(invoiceInput.value) + 1).toString().padStart(Math.max(invoiceInput.value.length, 3), '0'); } catch(e){}
+            saveSettings();
+            
+            let cleanPhone = clientPhone ? (countryCode + clientPhone).replace(/\D/g, '') : "";
+            const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
         async function fetchBCV(isManual) {
             const btn = document.getElementById('btn-refresh');
             const icon = btn.querySelector('i');
             const input = document.getElementById('exchangeRate');
-            icon.className = 'fas fa-sync-alt spin';
-            btn.disabled = true;
-            
-            const tryFetch = async (url, parser) => {
-                try { const r = await fetch(url); if(!r.ok) throw new Error(); return parser(await r.json()); } catch (e) { throw e; }
-            };
-
+            icon.className = 'fas fa-sync-alt spin'; btn.disabled = true;
+            const tryFetch = async (url, parser) => { try { const r = await fetch(url); if(!r.ok) throw new Error(); return parser(await r.json()); } catch (e) { throw e; } };
             try {
                 let rate = null;
                 try { rate = await tryFetch('https://ve.dolarapi.com/v1/euros/oficial', d => d.promedio); } 
                 catch (e) { try { rate = await tryFetch('https://pydolarvenezuela-api.vercel.app/api/v1/euro?page=bcv', d => d.monitors?.bcv?.price || d.price); }
                 catch (e2) { rate = await tryFetch('https://open.er-api.com/v6/latest/EUR', d => d.rates.VES); } }
-
                 if (!rate) throw new Error();
                 input.value = parseFloat(rate).toFixed(2);
-                calculateTotal(); saveSettings();
+                handleRateChange(); calculateTotal(); saveSettings();
                 icon.className = 'fas fa-check text-green-500'; setTimeout(() => icon.className = 'fas fa-sync-alt', 2000);
             } catch (e) {
-                if (isManual) alert("⚠️ Error conectando al BCV. Ingresa tasa manual.");
+                if (isManual) alert("Error conectando a tasas.");
                 icon.className = 'fas fa-exclamation-triangle text-yellow-500';
             } finally { icon.classList.remove('spin'); btn.disabled = false; }
         }
 
-        // --- INIT & LOGIC ---
         document.getElementById('invoiceDate').valueAsDate = new Date();
-        document.addEventListener('DOMContentLoaded', () => { loadSettings(); addItem(); fetchBCV(false); });
-
-        function addItem() {
-            const t = document.getElementById('item-template').content.cloneNode(true);
-            const sel = t.querySelector('.service-select');
-            predefinedServices.forEach((s,i) => {
-                const o = document.createElement('option'); o.value = i; o.textContent = `▼ ${s.name} (€${s.price})`; sel.appendChild(o);
-            });
-            document.getElementById('items-container').appendChild(t);
-        }
-        function fillItem(el) {
-            const row = el.closest('.item-row');
-            if (el.value !== "") {
-                const s = predefinedServices[el.value];
-                row.querySelector('.item-desc').value = s.name;
-                row.querySelector('.item-price').value = s.price;
-            }
-            calculateTotal();
-        }
-        function removeItem(btn) {
-            const c = document.getElementById('items-container');
-            btn.closest('.item-row').remove();
-            if(c.children.length === 0) addItem();
-            calculateTotal();
-        }
-        function calculateTotal() {
-            let total = 0;
-            document.querySelectorAll('.item-row').forEach(row => {
-                total += (row.querySelector('.item-qty').value || 0) * (row.querySelector('.item-price').value || 0);
-            });
-            document.getElementById('subtotalDisplay').textContent = `€${total.toFixed(2)}`;
-            document.getElementById('totalDisplay').textContent = `€${total.toFixed(2)}`;
-            
-            const rate = document.getElementById('exchangeRate').value;
-            const bsDisplay = document.getElementById('totalBsDisplay');
-            const bsContainer = document.getElementById('bsContainer');
-            
-            if (rate > 0) {
-                const totalBs = total * rate;
-                bsDisplay.textContent = `Bs ${totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                bsContainer.classList.remove('hidden');
-            } else {
-                bsContainer.classList.add('hidden');
-            }
-            return { total, rate };
-        }
-
-        function generateWhatsAppLink() {
-            const clientName = document.getElementById('clientName').value || "Cliente";
-            const clientPhone = document.getElementById('clientPhone').value; 
-            const countryCode = document.getElementById('countryCode').value;
-            const invoiceInput = document.getElementById('invoiceNumber');
-            const invoiceNum = invoiceInput.value;
-            const showBank = document.getElementById('showBankDetails').checked;
-            
-            // Auto increment
-            try { invoiceInput.value = (parseInt(invoiceNum) + 1).toString().padStart(Math.max(invoiceNum.length, 3), '0'); } catch(e){}
-            saveSettings();
-
-            // Build Message
-            const rawDate = document.getElementById('invoiceDate').value;
-            const [y, m, d] = rawDate.split('-');
-            const date = `${d}/${m}/${y}`;
-            const { total, rate } = calculateTotal();
-            let cleanPhone = clientPhone ? (countryCode + clientPhone).replace(/\D/g, '') : "";
-
-            let msg = "";
-
-            if (currentMsgType === 'full') {
-                // --- MODO TEXTO DETALLADO ---
-                msg = `*LEMUSTECH CO.* 💻\n_Servicio Técnico Especializado_\n\n`;
-                msg += `📄 *Recibo N°:* ${invoiceNum}\n🗓️ *Fecha:* ${date}\n👤 *Cliente:* ${clientName}\n\n`;
-                msg += `🔧 *SERVICIOS:*\n━━━━━━━━━━━━━━━━━━━\n`;
-                
-                let hasItems = false;
-                document.querySelectorAll('.item-row').forEach(row => {
-                    const desc = row.querySelector('.item-desc').value;
-                    const qty = row.querySelector('.item-qty').value;
-                    const price = row.querySelector('.item-price').value;
-                    if(desc && price) {
-                        hasItems = true;
-                        msg += `🔸 ${desc} (x${qty}) → €${(price * qty).toFixed(2)}\n`;
-                    }
-                });
-                if (!hasItems) return alert("Agrega servicios primero.");
-
-                msg += `━━━━━━━━━━━━━━━━━━━\n`;
-                msg += `💶 *TOTAL: €${total.toFixed(2)}*\n`;
-                if (rate > 0) {
-                    const totalBs = total * rate;
-                    msg += `🇻🇪 *En Bs:* ${totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (Tasa: ${rate})\n`;
-                }
-
-                if (showBank) {
-                    msg += `\n💳 *DATOS DE PAGO:*\n`;
-                    const pm = document.getElementById('payMobile').value;
-                    const pw = document.getElementById('payWallets').value;
-                    const pb = document.getElementById('payBinance').value;
-                    if(pm) msg += `📲 Pago Móvil: ${pm}\n`;
-                    if(pw) msg += `🔹 Wallets: ${pw}\n`;
-                    if(pb) msg += `🔸 Binance: ${pb}\n`;
-                    if(document.getElementById('payBank').value) msg += `🏦 Transferencias: Ver adjunto\n`;
-                }
-                const notes = document.getElementById('notes').value;
-                if (notes) msg += `\n📝 *Nota:* ${notes}\n`;
-                msg += `\n✅ Gracias por su preferencia.\n\n🌐 www.lemustech.net\n📸 @Lemustech.ve`;
-
-            } else {
-                // --- MODO CORTO (SOLO PDF) ---
-                msg = `*LEMUSTECH CO.* 💻\n\n`;
-                msg += `👋 Hola *${clientName}*.\n`;
-                msg += `📎 Adjunto envío su *Recibo N° ${invoiceNum}* en formato PDF.\n\n`;
-                msg += `💶 *Total a Pagar: €${total.toFixed(2)}*\n`;
-                if (rate > 0) {
-                    const totalBs = total * rate;
-                    msg += `🇻🇪 (Bs ${totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2})})\n`;
-                }
-                msg += `\n✅ Quedo atento a su pago y comentarios.\n`;
-            }
-
-            const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
-        }
+        document.addEventListener('DOMContentLoaded', () => { loadSettings(); loadClients(); fetchBCV(false); });
     </script>
 </body>
 </html>
